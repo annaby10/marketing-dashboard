@@ -66,8 +66,19 @@ def load_data():
     if biz.empty:
         biz = safe_read("business.csv")
 
-    mkt = pd.concat([fb, gg, tk], ignore_index=True)
+       # Concatenate only if files exist
+    dfs = []
+    if not fb.empty: dfs.append(fb)
+    if not gg.empty: dfs.append(gg)
+    if not tk.empty: dfs.append(tk)
+
+    if dfs:
+        mkt = pd.concat(dfs, ignore_index=True)
+    else:
+        mkt = pd.DataFrame()   # fallback if no data found
+
     return mkt, biz
+
 
 # ------------------------------
 # Derive Metrics
