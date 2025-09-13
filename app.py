@@ -43,28 +43,28 @@ def norm(df, source_name):
 @st.cache_data
 def load_data():
     try:
-        fb = pd.read_csv("Facebook.csv")
+        fb = pd.read_csv("data/Facebook.csv")
         fb = norm(fb, "Facebook")
     except Exception as e:
         st.warning(f"⚠️ Could not load Facebook.csv: {e}")
         fb = pd.DataFrame()
 
     try:
-        gg = pd.read_csv("Google.csv")
+        gg = pd.read_csv("data/Google.csv")
         gg = norm(gg, "Google")
     except Exception as e:
         st.warning(f"⚠️ Could not load Google.csv: {e}")
         gg = pd.DataFrame()
 
     try:
-        tk = pd.read_csv("TikTok.csv")
+        tk = pd.read_csv("data/TikTok.csv")
         tk = norm(tk, "TikTok")
     except Exception as e:
         st.warning(f"⚠️ Could not load TikTok.csv: {e}")
         tk = pd.DataFrame()
 
     try:
-        biz = pd.read_csv("Business.csv")
+        biz = pd.read_csv("data/Business.csv")
         biz.columns = biz.columns.str.strip().str.lower().str.replace(" ", "_")
         biz["date"] = pd.to_datetime(biz["date"])
     except Exception as e:
