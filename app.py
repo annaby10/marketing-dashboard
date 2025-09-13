@@ -1,45 +1,28 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from pathlib import Path
+import os
 
-st.set_page_config(layout="wide", page_title="Marketing → Business Dashboard")
-
-# ----------- Load Data -----------
-DATA_DIRS = [Path("data"), Path("/mnt/data")]
-
-def load_csv_anywhere(name):
-    for d in DATA_DIRS:
-        p = d / name
-        if p.exists():
-            return pd.read_csv(p, parse_dates=["date"], dayfirst=False)
-    return pd.DataFrame()
-
-@st.cache_data
-def load_all():
-    fb = load_csv_anywhere("Facebook.csv")
-    google = load_csv_anywhere("Google.csv")
-    tiktok = load_csv_anywhere("TikTok.csv")
-    biz = load_csv_anywhere("business.csv")
-
-    # normalize columns
-   def norm(df, source_name):
+# ------------------------------
+# Helper: Normalize marketing CSVs
+# ------------------------------
+def norm(df, source_name):
     if df.empty:
         return df
     df = df.copy()
 
-    # Lowercase + replace spaces with underscores
+    # Standardize column names
     df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
 
     df["channel"] = source_name
     df["date"] = pd.to_datetime(df["date"])
 
-    # Normalize column names
+    # Normalize expected columns
     if "impressions" in df.columns:
         df["impression"] = df["impressions"]
+
     if "impression" not in df.columns:
         df["impression"] = 0
-
     if "clicks" not in df.columns:
         df["clicks"] = 0
     if "spend" not in df.columns:
@@ -54,91 +37,152 @@ def load_all():
     return df
 
 
-    fb = norm(fb, "Facebook")
-    google = norm(google, "Google")
-    tiktok = norm(tiktok, "TikTok")
-    mkt = pd.concat([d for d in [fb, google, tiktok] if not d.empty], ignore_index=True)
+# ------------------------------
+# Load Data
+# ------------------------------
+@st.cache_data
+def load_data():
+    try:
+        fb = pd.read_csv("Facebook.csv")
+        fb = norm(fb, "Facebook")
+    except Exception as e:
+        st.warning(f"⚠️ Could not load Facebook.csv: {e}")
+        fb = pd.DataFrame()
 
-    if not biz.empty:
-        biz.columns = biz.columns.str.strip().str.lower()
+    try:
+        gg = pd.read_csv("Google.csv")
+        gg = norm(gg, "Google")
+    except Exception as e:
+        st.warning(f"⚠️ Could not load Google.csv: {e}")
+        gg = pd.DataFrame()
+
+    try:
+        tk = pd.read_csv("TikTok.csv")
+        tk = norm(tk, "TikTok")
+    except Exception as e:
+        st.warning(f"⚠️ Could not load TikTok.csv: {e}")
+        tk = pd.DataFrame()
+
+    try:
+        biz = pd.read_csv("Business.csv")
+        biz.columns = biz.columns.str.strip().str.lower().str.replace(" ", "_")
         biz["date"] = pd.to_datetime(biz["date"])
+    except Exception as e:
+        st.warning(f"⚠️ Could not load Business.csv: {e}")
+        biz = pd.DataFrame()
+
+    mkt = pd.concat([fb, gg, tk], ignore_index=True)
     return mkt, biz
 
-mkt, biz = load_all()
 
-if mkt.empty and biz.empty:
-    st.warning("No data found. Place CSVs in ./data/ and refresh.")
-    st.stop()
+mkt, biz = load_data()
 
-# ----------- Aggregations -----------
-mkt_day = mkt.groupby(["date", "channel"], as_index=False).agg(
-    impression=("impression", "sum"),
-    clicks=("clicks", "sum"),
-    spend=("spend", "sum"),
-    attributed_revenue=("attributed_revenue", "sum"),
-)
-mkt_day["ctr"] = mkt_day["clicks"] / mkt_day["impression"].replace({0: pd.NA})
-mkt_day["cpc"] = mkt_day["spend"] / mkt_day["clicks"].replace({0: pd.NA})
-mkt_day["roas"] = mkt_day["attributed_revenue"] / mkt_day["spend"].replace({0: pd.NA})
+# ------------------------------
+# Aggregations
+# ------------------------------
+if not mkt.empty:
+    mkt_day = (
+        mkt.groupby(["date", "channel"], as_index=False)
+        .agg(
+            impression=("impression", "sum"),
+            clicks=("clicks", "sum"),
+            spend=("spend", "sum"),
+            attributed_revenue=("attributed_revenue", "sum"),
+        )
+    )
+else:
+    mkt_day = pd.DataFrame()
 
-summary_by_date = mkt_day.groupby("date", as_index=False).agg(
-    spend=("spend", "sum"),
-    attributed_revenue=("attributed_revenue", "sum"),
-    clicks=("clicks", "sum"),
-    impression=("impression", "sum"),
-)
+# ------------------------------
+# Streamlit Layout
+# ------------------------------
+st.set_page_config(page_title="Marketing & Business Dashboard", layout="wide")
+st.title("📊 Marketing & Business Performance Dashboard")
+
+# Date filter
+if not mkt_day.empty:
+    min_date = mkt_day["date"].min()
+    max_date = mkt_day["date"].max()
+    start, end = st.date_input("Select Date Range", [min_date, max_date])
+    mask = (mkt_day["date"] >= pd.to_datetime(start)) & (mkt_day["date"] <= pd.to_datetime(end))
+    mkt_day = mkt_day.loc[mask]
+    if not biz.empty:
+        biz = biz.loc[(biz["date"] >= pd.to_datetime(start)) & (biz["date"] <= pd.to_datetime(end))]
+
+# KPIs
+st.subheader("Key Metrics")
+col1, col2, col3, col4 = st.columns(4)
+
+if not mkt_day.empty:
+    total_spend = mkt_day["spend"].sum()
+    total_rev = mkt_day["attributed_revenue"].sum()
+    total_clicks = mkt_day["clicks"].sum()
+    impressions = mkt_day["impression"].sum()
+else:
+    total_spend = total_rev = total_clicks = impressions = 0
 
 if not biz.empty:
-    biz_daily = biz.groupby("date", as_index=False).agg(
-        orders=("orders", "sum") if "orders" in biz.columns else ("new_orders", "sum"),
-        new_customers=("new_customers", "sum"),
-        total_revenue=("total_revenue", "sum"),
-        gross_profit=("gross_profit", "sum"),
-    )
-    merged = summary_by_date.merge(biz_daily, on="date", how="left").fillna(0)
+    total_orders = biz["orders"].sum()
+    total_customers = biz["new_customers"].sum()
 else:
-    merged = summary_by_date
+    total_orders = total_customers = 0
 
-merged["cac"] = merged["spend"] / merged["new_customers"].replace({0: pd.NA})
-merged["rev_per_order"] = merged["total_revenue"] / merged["orders"].replace({0: pd.NA})
+col1.metric("Total Spend", f"${total_spend:,.0f}")
+col2.metric("Attributed Revenue", f"${total_rev:,.0f}")
+col3.metric("Orders", f"{total_orders:,}")
+col4.metric("New Customers", f"{total_customers:,}")
 
-# ----------- UI -----------
-st.title("📊 Marketing → Business Dashboard")
+# Charts
+st.subheader("Marketing Performance Over Time")
+if not mkt_day.empty:
+    fig = px.line(
+        mkt_day,
+        x="date",
+        y="spend",
+        color="channel",
+        title="Daily Spend by Channel",
+    )
+    st.plotly_chart(fig, use_container_width=True)
 
-c1, c2, c3, c4 = st.columns(4)
-c1.metric("Total Spend", f"${merged['spend'].sum():,.0f}")
-c2.metric("Total Attributed Revenue", f"${merged['attributed_revenue'].sum():,.0f}")
-c3.metric("ROAS", f"{(merged['attributed_revenue'].sum()/merged['spend'].sum()):.2f}" if merged['spend'].sum()>0 else "N/A")
-c4.metric("New Customers", f"{int(merged['new_customers'].sum()) if 'new_customers' in merged.columns else 0}")
+    fig2 = px.line(
+        mkt_day,
+        x="date",
+        y="attributed_revenue",
+        color="channel",
+        title="Attributed Revenue by Channel",
+    )
+    st.plotly_chart(fig2, use_container_width=True)
 
-channels = ["All"] + sorted(mkt["channel"].dropna().unique().tolist())
-sel_channel = st.selectbox("Channel", channels)
+st.subheader("Business Performance Over Time")
+if not biz.empty:
+    fig3 = px.line(
+        biz,
+        x="date",
+        y="orders",
+        title="Orders Over Time",
+    )
+    st.plotly_chart(fig3, use_container_width=True)
 
-df_plot = merged.copy()
-if sel_channel != "All":
-    dates = mkt_day[mkt_day["channel"] == sel_channel].groupby("date", as_index=False).sum()
-    df_plot = summary_by_date.merge(dates[["date", "spend", "attributed_revenue"]], on="date", how="inner")
+    fig4 = px.line(
+        biz,
+        x="date",
+        y="gross_profit",
+        title="Gross Profit Over Time",
+    )
+    st.plotly_chart(fig4, use_container_width=True)
 
-fig = px.line(
-    df_plot.sort_values("date"),
-    x="date",
-    y=["spend", "attributed_revenue", "total_revenue"] if "total_revenue" in df_plot.columns else ["spend", "attributed_revenue"],
-    labels={"value": "Amount", "variable": "Metric"},
-    title="Spend vs Revenue over time",
-)
-st.plotly_chart(fig, use_container_width=True)
-
-ch_summary = mkt.groupby("channel", as_index=False).agg(spend=("spend", "sum"), attributed_revenue=("attributed_revenue", "sum"))
-fig2 = px.bar(ch_summary, x="channel", y=["spend", "attributed_revenue"], title="Channel: Spend vs Attributed Revenue", barmode="group")
-st.plotly_chart(fig2, use_container_width=True)
-
-camp = mkt.groupby(["channel", "campaign"], as_index=False).agg(
-    impression=("impression", "sum"),
-    clicks=("clicks", "sum"),
-    spend=("spend", "sum"),
-    attributed_revenue=("attributed_revenue", "sum"),
-)
-camp["ctr"] = camp["clicks"] / camp["impression"].replace({0: pd.NA})
-camp["roas"] = camp["attributed_revenue"] / camp["spend"].replace({0: pd.NA})
-st.subheader("Campaign Performance")
-st.dataframe(camp.sort_values("spend", ascending=False).reset_index(drop=True))
+st.subheader("Channel Efficiency")
+if not mkt_day.empty:
+    channel_perf = (
+        mkt_day.groupby("channel", as_index=False)
+        .agg(spend=("spend", "sum"), revenue=("attributed_revenue", "sum"))
+        .assign(roas=lambda d: d["revenue"] / d["spend"].replace(0, pd.NA))
+    )
+    fig5 = px.bar(
+        channel_perf,
+        x="channel",
+        y="roas",
+        title="ROAS by Channel",
+        text_auto=".2f",
+    )
+    st.plotly_chart(fig5, use_container_width=True)
