@@ -148,4 +148,104 @@ if not mkt.empty:
         title="Return on Investment (ROI) by Channel",
         text="ROI"
     )
-    st.plotly_chart(fig6, use_container_width=True)
+    st.plotly_chart(fig6, use_container_width=True)   
+
+# Channel-level performance summary
+if not mkt.empty:
+    mkt_day = mkt.groupby(["date", "source"], as_index=False).agg(
+        spend=("spend", "sum"),
+        revenue=("revenue", "sum"),
+        clicks=("clicks", "sum"),
+        impressions=("impressions", "sum")
+    )
+    channel_perf = mkt.groupby("source", as_index=False).agg(
+        spend=("spend", "sum"),
+        revenue=("revenue", "sum")
+    )
+    channel_perf["roas"] = channel_perf["revenue"] / channel_perf["spend"].replace(0, pd.NA)
+# Section 5: Spend Share vs Revenue Share
+if not mkt.empty:
+    spend_share = channel_perf.copy()
+    spend_share["spend_share"] = spend_share["spend"] / spend_share["spend"].sum()
+    spend_share["rev_share"] = spend_share["revenue"] / spend_share["revenue"].sum()
+
+    fig_share = px.bar(
+        spend_share.melt(id_vars="source", value_vars=["spend_share", "rev_share"]),
+        x="source",
+        y="value",
+        color="variable",
+        barmode="group",
+        title="Spend Share vs Revenue Share by Channel",
+        text_auto=".1%"
+    )
+    st.plotly_chart(fig_share, use_container_width=True)
+
+# Section 6: Profitability Scatter
+if not biz.empty and "orders" in biz.columns and "new_orders" in biz.columns:
+    total_orders = biz["orders"].sum()
+    total_new_orders = biz["new_orders"].sum()
+
+    if total_orders > 0 and total_new_orders > 0:
+        gm_per_order = (biz["gross_profit"].sum() / total_orders) if "gross_profit" in biz.columns else 0
+        cac_df = channel_perf.copy()
+        cac_df["cac"] = cac_df["spend"] / total_new_orders if total_new_orders > 0 else 0
+        cac_df["gm_per_order"] = gm_per_order
+
+        fig_scatter = px.scatter(
+            cac_df, x="cac", y="gm_per_order", text="source",
+            title="CAC vs Gross Margin per Order",
+            labels={"cac": "Customer Acquisition Cost", "gm_per_order": "Gross Margin per Order"}
+        )
+        st.plotly_chart(fig_scatter, use_container_width=True)
+
+# Section 7: Attribution Gap
+if not biz.empty and not mkt.empty and "total_revenue" in biz.columns:
+    rev_compare = pd.merge(
+        biz.groupby("date", as_index=False).agg(total_revenue=("total_revenue", "sum")),
+        mkt_day.groupby("date", as_index=False).agg(attributed_revenue=("revenue", "sum")),
+        on="date", how="left"
+    )
+    fig_gap = px.area(
+        rev_compare, x="date", y=["total_revenue", "attributed_revenue"],
+        title="Attribution Gap: Business Revenue vs Marketing-Attributed Revenue"
+    )
+    st.plotly_chart(fig_gap, use_container_width=True)
+
+# Section 8: Key Insights
+st.subheader("📌 Key Insights")
+
+insights = []
+
+# ROAS-based insights
+if not mkt.empty:
+    roas = (mkt["revenue"].sum() / mkt["spend"].sum()) if mkt["spend"].sum() > 0 else 0
+    if roas > 2:
+        insights.append(f"✅ Strong performance: ROAS is {roas:.2f}x.")
+    elif roas < 1:
+        insights.append("⚠️ ROAS below 1 → marketing spend is not breaking even.")
+
+# CAC vs Margin
+if not biz.empty and "orders" in biz.columns and "gross_profit" in biz.columns:
+    gross_margin = biz["gross_profit"].sum() / biz["orders"].sum() if biz["orders"].sum() > 0 else 0
+    cac = (mkt["spend"].sum() / biz["new_orders"].sum()) if biz["new_orders"].sum() > 0 else 0
+    if cac > gross_margin:
+        insights.append(f"⚠️ CAC (${cac:.2f}) exceeds margin per order (${gross_margin:.2f}) → unprofitable acquisition.")
+
+# Top channel by ROAS
+if not mkt.empty and not channel_perf.empty:
+    top_channel = channel_perf.sort_values("roas", ascending=False).iloc[0]["source"]
+    insights.append(f"⭐ {top_channel} is the most efficient channel by ROAS.")
+
+# Customer mix
+if not biz.empty and "orders" in biz.columns and "new_orders" in biz.columns:
+    total_orders = biz["orders"].sum()
+    total_new_orders = biz["new_orders"].sum()
+    if total_new_orders / max(total_orders, 1) > 0.5:
+        insights.append("📈 More than half of orders are from new customers → strong acquisition momentum.")
+
+if insights:
+    for i in insights:
+        st.markdown(f"- {i}")
+else:
+    st.info("No major insights available yet. Upload more data!")
+
