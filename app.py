@@ -6,19 +6,19 @@ import os
 st.set_page_config(page_title="Marketing & Business Dashboard", layout="wide")
 
 # ---------- Utility Safe Loader ----------
-def safe_read(path, source_name):
+#def safe_read(path, source_name):
     """Read CSV safely, return DataFrame or empty with warning"""
-    if os.path.exists(path):
-        try:
-            df = pd.read_csv(path)
-            st.success(f"✅ Loaded {source_name} ({df.shape[0]} rows)")
-            return df
-        except Exception as e:
-            st.error(f"⚠️ Could not load {source_name}: {e}")
-            return pd.DataFrame()
-    else:
-        st.warning(f"⚠️ File not found: {path}")
-        return pd.DataFrame()
+    #if os.path.exists(path):
+        #try:
+       #     df = pd.read_csv(path)
+      #      st.success(f"✅ Loaded {source_name} ({df.shape[0]} rows)")
+     #       return df
+    #    except Exception as e:
+   #         st.error(f"⚠️ Could not load {source_name}: {e}")
+  #          return pd.DataFrame()
+   # else:
+   #     st.warning(f"⚠️ File not found: {path}")
+   #     return pd.DataFrame()  
 
 # ---------- Normalizer for Marketing ----------
 def norm(df, source_name):
