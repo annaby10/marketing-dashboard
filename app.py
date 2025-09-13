@@ -23,19 +23,36 @@ def load_all():
     biz = load_csv_anywhere("business.csv")
 
     # normalize columns
-    def norm(df, source_name):
-        if df.empty:
-            return df
-        df = df.copy()
-        df.columns = df.columns.str.strip().str.lower()
-        df["channel"] = source_name
-        df["date"] = pd.to_datetime(df["date"])
-        if "impressions" in df.columns:
-            df["impression"] = df["impressions"]
-        for n in ["impression", "clicks", "spend", "attributed_revenue"]:
-            if n in df.columns:
-                df[n] = pd.to_numeric(df[n], errors="coerce").fillna(0)
+   def norm(df, source_name):
+    if df.empty:
         return df
+    df = df.copy()
+
+    # Lowercase + replace spaces with underscores
+    df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
+
+    df["channel"] = source_name
+    df["date"] = pd.to_datetime(df["date"])
+
+    # Normalize column names
+    if "impressions" in df.columns:
+        df["impression"] = df["impressions"]
+    if "impression" not in df.columns:
+        df["impression"] = 0
+
+    if "clicks" not in df.columns:
+        df["clicks"] = 0
+    if "spend" not in df.columns:
+        df["spend"] = 0
+    if "attributed_revenue" not in df.columns:
+        df["attributed_revenue"] = 0
+
+    # Ensure numeric
+    for n in ["impression", "clicks", "spend", "attributed_revenue"]:
+        df[n] = pd.to_numeric(df[n], errors="coerce").fillna(0)
+
+    return df
+
 
     fb = norm(fb, "Facebook")
     google = norm(google, "Google")
