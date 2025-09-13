@@ -49,9 +49,9 @@ def load_data():
             return pd.DataFrame()
 
     # Load marketing files (case-insensitive)
-    fb = safe_read("data/Facebook.csv", "Facebook")
+    fb = safe_read("Facebook.csv", "Facebook")
     if fb.empty:
-        fb = safe_read("data/facebook.csv", "Facebook")
+        fb = safe_read("facebook.csv", "Facebook")
 
     gg = safe_read("data/Google.csv", "Google")
     if gg.empty:
@@ -62,9 +62,9 @@ def load_data():
         tk = safe_read("data/tiktok.csv", "TikTok")
 
     # Load business file (case-insensitive)
-    biz = safe_read("data/Business.csv")
+    biz = safe_read("Business.csv")
     if biz.empty:
-        biz = safe_read("data/business.csv")
+        biz = safe_read("business.csv")
 
     mkt = pd.concat([fb, gg, tk], ignore_index=True)
     return mkt, biz
