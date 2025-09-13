@@ -5,6 +5,7 @@ import os
 
 st.set_page_config(page_title="Marketing & Business Dashboard", layout="wide")
 
+# ---------- Utility Safe Loader ----------
 def safe_read(path, source_name):
     """Read CSV safely, return DataFrame or empty with warning"""
     if os.path.exists(path):
@@ -45,10 +46,10 @@ def norm(df, source_name):
 # ---------- Load Data ----------
 @st.cache_data
 def load_data():
-    fb = safe_read("Facebook.csv", "Facebook")
+    fb = safe_read("data/Facebook.csv", "Facebook")
     gg = safe_read("data/Google.csv", "Google")
     tk = safe_read("data/TikTok.csv", "TikTok")
-    biz = safe_read("business.csv", "Business")
+    biz = safe_read("data/Business.csv", "Business")
 
     # Normalize marketing
     mkt = pd.concat(
