@@ -164,21 +164,24 @@ if not mkt_day.empty:
 
 st.subheader("Business Performance Over Time")
 if not biz.empty:
-    fig3 = px.line(
-        biz,
-        x="date",
-        y="orders",
-        title="Orders Over Time",
-    )
-    st.plotly_chart(fig3, use_container_width=True)
+    if "of_orders" in biz.columns:
+        fig3 = px.line(
+            biz,
+            x="date",
+            y="of_orders",
+            title="Orders Over Time",
+        )
+        st.plotly_chart(fig3, use_container_width=True)
 
-    fig4 = px.line(
-        biz,
-        x="date",
-        y="gross_profit",
-        title="Gross Profit Over Time",
-    )
-    st.plotly_chart(fig4, use_container_width=True)
+    if "gross_profit" in biz.columns:
+        fig4 = px.line(
+            biz,
+            x="date",
+            y="gross_profit",
+            title="Gross Profit Over Time",
+        )
+        st.plotly_chart(fig4, use_container_width=True)
+
 
 st.subheader("Channel Efficiency")
 if not mkt_day.empty:
