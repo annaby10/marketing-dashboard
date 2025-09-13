@@ -43,7 +43,7 @@ def norm(df, source_name):
 @st.cache_data
 def load_data():
     try:
-        fb = pd.read_csv("data/Facebook.csv")
+        fb = pd.read_csv("Facebook.csv")
         fb = norm(fb, "Facebook")
     except Exception as e:
         st.warning(f"⚠️ Could not load Facebook.csv: {e}")
@@ -64,7 +64,7 @@ def load_data():
         tk = pd.DataFrame()
 
     try:
-        biz = pd.read_csv("data/Business.csv")
+        biz = pd.read_csv("business.csv")
         biz.columns = biz.columns.str.strip().str.lower().str.replace(" ", "_")
         biz["date"] = pd.to_datetime(biz["date"])
     except Exception as e:
