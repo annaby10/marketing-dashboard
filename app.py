@@ -122,15 +122,24 @@ else:
     total_spend = total_rev = total_clicks = impressions = 0
 
 if not biz.empty:
-    total_orders = biz["orders"].sum()
-    total_customers = biz["new_customers"].sum()
+    # Handle different possible column names
+    if "of_orders" in biz.columns:
+        total_orders = biz["of_orders"].sum()
+    else:
+        total_orders = 0
+
+    if "or_new_orders" in biz.columns:
+        total_new_orders = biz["or_new_orders"].sum()
+    else:
+        total_new_orders = 0
 else:
-    total_orders = total_customers = 0
+    total_orders = total_new_orders = 0
+
 
 col1.metric("Total Spend", f"${total_spend:,.0f}")
 col2.metric("Attributed Revenue", f"${total_rev:,.0f}")
 col3.metric("Orders", f"{total_orders:,}")
-col4.metric("New Customers", f"{total_customers:,}")
+col4.metric("New Orders", f"{total_new_orders:,}")
 
 # Charts
 st.subheader("Marketing Performance Over Time")
