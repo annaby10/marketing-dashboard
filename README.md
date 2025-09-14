@@ -38,28 +38,25 @@ Provides actionable insights on revenue, marketing efficiency, ROI, and customer
 
 ---
 
-🖥 Dashboard Overview
+## 🖥 Dashboard Overview
 
-Business Overview: Quick snapshot of total orders, new customers, revenue, and gross profit.
-Marketing Efficiency: Spend vs revenue by channel, ROAS calculation.
-Trend Lines: Visualize orders, revenue, and marketing spend trends.
-ROI & Profitability: CAC vs gross margin, ROAS per channel.
-Spend vs Revenue Share: Compare contribution by channel.
-Attribution Gap: Detect discrepancies between business revenue and marketing-attributed revenue.
-Key Insights: Automated, actionable recommendations for decision-making.
+- **Business Overview:** Quick snapshot of total orders, new customers, revenue, and gross profit.
+- **Marketing Efficiency:** Spend vs revenue by channel, ROAS calculation.
+- **Trend Lines:** Visualize orders, revenue, and marketing spend trends.
+- **ROI & Profitability:** CAC vs gross margin, ROAS per channel.
+- **Spend vs Revenue Share:** Compare contribution by channel.
+- **Attribution Gap:** Detect discrepancies between business revenue and marketing-attributed revenue.
+- **Key Insights:** Automated, actionable recommendations for decision-making.
 
-📈 Example Visualizations
+## 📈 Example Visualizations
 
-ROAS by Channel: Bar chart of channel efficiency
-Marketing Spend vs Revenue: Line chart comparison
-Orders Over Time: Time series visualization
-CAC vs Gross Margin: Scatter plot for profitability analysis
+- **ROAS by Channel:** Bar chart of channel efficiency
+- **Marketing Spend vs Revenue:** Line chart comparison
+- **Orders Over Time:** Time series visualization
+- **CAC vs Gross Margin:** Scatter plot for profitability analysis
 
-⚡ Future Enhancements
+## ⚡ Future Enhancements
 
-Forecasting revenue and marketing spend
-Interactive filters for campaigns, regions, or channels
-Real-time integration with marketing APIs
-
-
-
+- Forecasting revenue and marketing spend
+- Interactive filters for campaigns, regions, or channels
+- Real-time integration with marketing APIs
