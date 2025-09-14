@@ -5,7 +5,7 @@ import os
 
 st.set_page_config(page_title="Marketing & Business Dashboard", layout="wide")
 
-# ---------- Utility Safe Loader ----------
+#Utility Safe Loader 
 def safe_read(path, source_name):
     """Read CSV safely, return DataFrame or empty with warning"""
     if os.path.exists(path):
@@ -19,7 +19,7 @@ def safe_read(path, source_name):
         st.warning(f"⚠️ File not found: {path}")
         return pd.DataFrame()
 
-# ---------- Normalizer for Marketing ----------
+#Normalizer for Marketing 
 def norm(df, source_name):
     """Normalize marketing data columns"""
     if df.empty:
@@ -49,7 +49,7 @@ def norm(df, source_name):
         df["date"] = pd.to_datetime(df["date"], errors="coerce")
     return df
 
-# ---------- Load Data ----------
+# Load Data
 @st.cache_data
 def load_data():
     fb = safe_read("Facebook.csv", "Facebook")
@@ -80,7 +80,7 @@ def load_data():
 
 mkt, biz = load_data()
 
-# ---------- Dashboard ----------
+# Dashboard 
 st.title("📊 Marketing & Business Performance Dashboard")
 
 # Section 1: Overview
